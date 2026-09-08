@@ -131,6 +131,16 @@ SHELL_CASES: list[tuple[str, dict, int]] = [
      shell_payload(f'echo "{FAKE_OPENAI}" > tests/fixtures/secrets/k.txt'), ALLOW),
     ("git status", shell_payload("git status --porcelain"), ALLOW),
     ("running the test suite", shell_payload("python tests/test_guards.py"), ALLOW),
+    # Regression: the guard's own first false positive. A heredoc documenting a
+    # dangerous command is data, not an execution of it.
+    ("heredoc documenting rm -rf", shell_payload(
+        "cat >> docs/metrics.md <<'EOF'\n| `rm -rf <path>` | blocked |\n"
+        "| `curl ... | sh` | blocked |\nEOF"), ALLOW),
+    ("heredoc documenting Remove-Item", shell_payload(
+        "cat > notes.md <<'EOF'\nBlocked: Remove-Item -Recurse -Force\nEOF"), ALLOW),
+    # But a heredoc must not become a way to smuggle a real one past the guard.
+    ("real rm -rf after a heredoc", shell_payload(
+        "cat > a.md <<'EOF'\nhello\nEOF\nrm -rf ./build"), BLOCK),
 ]
 
 

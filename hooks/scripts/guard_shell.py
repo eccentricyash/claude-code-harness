@@ -55,6 +55,38 @@ WRITE_FORMS = [
 ]
 
 
+HEREDOC = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
+
+
+def strip_heredocs(command: str) -> str:
+    """Remove heredoc bodies before scanning for dangerous commands.
+
+    Writing documentation that mentions `rm -rf` is not running `rm -rf`. This
+    guard's first real false positive was a heredoc appending a metrics table
+    that quoted the very commands the guard blocks -- so a note about a blocked
+    command became a blocked command.
+
+    Bodies are still scanned for secrets separately; only the dangerous-command
+    match is narrowed, because that one is about what will *execute*.
+    """
+    lines = command.splitlines()
+    out: list[str] = []
+    skip_until: str | None = None
+
+    for line in lines:
+        if skip_until is not None:
+            if line.strip() == skip_until:
+                skip_until = None
+            continue
+
+        out.append(line)
+        match = HEREDOC.search(line)
+        if match:
+            skip_until = match.group(2)
+
+    return "\n".join(out)
+
+
 def block(reason: str) -> int:
     print(
         json.dumps(
@@ -113,7 +145,9 @@ def main() -> int:
     if not isinstance(command, str) or not command.strip():
         return 0
 
-    why = check_dangerous(command)
+    # Dangerous-command matching ignores heredoc bodies: text being written to
+    # a file is data, not something about to execute.
+    why = check_dangerous(strip_heredocs(command))
     if why:
         return block(
             f"Blocked: {why}.\n\n"

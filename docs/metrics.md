@@ -117,3 +117,72 @@ The Bash row decides whether the floor is real: deny rules cover shell reads, no
 - **`context7` deferred** to first real project, same reasoning. Cheap (deferred = 0 tokens) but another moving part with nothing to ground yet.
 - **`skill-creator` installed** — earns its place now because Phase 2 is skill authoring.
 - **Both TS and Python stack templates** written in Phase 2, since work will span both.
+
+---
+
+# Phase 3 — hooks live (2026-09-08)
+
+Reloaded state: **3 plugins, 6 skills, 8 agents, 3 hooks.**
+
+## Live end-to-end results
+
+| Test | Expected | Actual |
+|---|---|---|
+| Write source containing a high-entropy key | blocked | **blocked** — both detectors fired (prefix + entropy 5.1) |
+| Write identical content under `tests/fixtures/` | allowed | **allowed** |
+| Recursive force delete | blocked | **blocked** |
+| Download piped into a shell | blocked | **blocked** |
+| `git status`, `ls` | unaffected | **unaffected** |
+
+Fixture suites: **43 guard + 7 stop-hook + structure**, all green.
+
+## FINDING 1 — Layer 0 deny outranks the hook allowlist
+
+Writing `tests/fixtures/secrets/sample.txt` was blocked — **not by the hook**, but
+by the Layer 0 rule matching any directory named `secrets/` at any depth. A Read
+deny also blocks writes. The hook's allowlist never got a say.
+
+Not a bug — the layered-control thesis behaving as designed:
+
+> **Access policy (permissions) outranks deterministic runtime checks (hooks).**
+
+Two consequences:
+
+1. **Never name a fixture directory `secrets/`.** `tests/fixtures/sample-credentials.txt`
+   works and is verified.
+2. **A hook allowlist cannot widen Layer 0.** If a path must be writable, it comes
+   out of the deny list — a deliberate, visible edit to `~/.claude/settings.json`.
+   That is the right place for that decision.
+
+## FINDING 2 — the guard's first real false positive, minutes after going live
+
+A heredoc appending *this very table* was blocked, because the table quotes the
+dangerous commands the guard blocks. Documenting a blocked command became a
+blocked command.
+
+**Fix:** dangerous-command matching now strips heredoc bodies first — text being
+written to a file is data, not something about to execute. Secret scanning still
+covers those bodies; only the execution check was narrowed.
+
+**Guarded against over-correction:** a fixture asserts that a *real* command
+following a heredoc still blocks, so heredocs cannot smuggle one past.
+
+This is the argument for the fixture suite in one incident. The fix took minutes
+because a test could prove it was narrow. Without that, the tempting fix is to
+switch the guard off.
+
+## Friction log
+
+| Event | Cost | Resolution |
+|---|---|---|
+| Bash command merely *mentioning* an env path was denied | one retry | None — deny rules match the path anywhere in the command. Correct but blunt. |
+| `tests/fixtures/secrets/` name collision | one rename | Documented above |
+| Heredoc quoting a blocked command was blocked | one guard fix + 3 fixtures | Fixed |
+
+Three further false positives were caught by the fixture suite *before* first use:
+`fnmatch` mishandling a leading `**/`, `.env.example` treated as a secret, and a
+module named `secrets.py` shadowing the stdlib.
+
+**Running total: 6 false positives, 0 shipped.** That ratio is the point — friction
+is what makes people switch a guard off, so it is treated as a defect class with
+tests, not an acceptable cost.
