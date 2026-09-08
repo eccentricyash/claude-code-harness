@@ -31,6 +31,12 @@ jobs:
       - name: Stop-hook fixtures
         run: python tests/test_stop_hook.py
 
+      - name: Loop-guard fixtures
+        run: python tests/test_loop_guard.py
+
+      - name: Verify-runner fixtures
+        run: python tests/test_verify.py
+
       - name: Structure checks
         run: python tests/test_structure.py
 

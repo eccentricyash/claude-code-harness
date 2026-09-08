@@ -71,6 +71,7 @@ FRAME → PLAN → PLAN-REVIEW → IMPLEMENT → VERIFY → TREE-CHECK → CODE-
 | `/harness:decide` | Appends a numbered ADR; refreshes `progress.md`. Memory that outlives the context window. |
 | `/harness:plan-review` | Forks to a fresh read-only `adversary` that checks a plan against the real repo before code exists. |
 | `/harness:ship-check` | Release gate: scanners, then the checklists scanners cannot cover. Every item classified AUTOMATED / SEMI / MANUAL. |
+| `/harness:loop-guard` | Bounded autonomy. **Refuses to start** without a machine-checkable exit criterion, an iteration cap, and a declared file scope. |
 
 Plus two agents that are read-only by construction: **`adversary`** (reviews,
 cannot edit) and **`verifier`** (runs commands, cannot fix).
@@ -85,13 +86,21 @@ cannot edit) and **`verifier`** (runs commands, cannot fix).
 
 ### Tests
 
-**43 guard fixtures + 7 stop-hook fixtures + structure checks**, in CI.
+**43 guard + 11 loop-guard + 7 stop-hook fixtures + structure checks**, in CI.
 
 The **must-not-block** cases matter as much as the must-block ones. Six false
-positives have been caught so far and none shipped — including one four minutes
-after the hooks went live, where a heredoc documenting `rm -rf` was itself
-blocked. Friction is what makes people switch a guard off, so it is treated as a
-defect class with tests rather than an acceptable cost.
+positives have been caught and none shipped — including one minutes after the
+hooks went live, where a heredoc documenting `rm -rf` was itself blocked.
+Friction is what makes people switch a guard off, so it is treated as a defect
+class with tests rather than an acceptable cost.
+
+The suite has also caught bugs that were invisible by inspection. The sharpest:
+`subprocess(shell=True)` uses **cmd.exe on Windows**, so a POSIX exit criterion
+like `test -z "$(grep -rl TODO src/)"` ran with no command substitution and
+returned non-zero *forever* — a loop armed with it could never terminate
+successfully, which is the precise failure `loop-guard` exists to prevent. Worse
+than a crash, because the command runs; it is merely wrong. Both `loop-guard`
+and `verify` now prefer bash, and a fixture locks it in.
 
 ---
 

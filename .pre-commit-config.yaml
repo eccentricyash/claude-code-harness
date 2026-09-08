@@ -11,6 +11,16 @@ repos:
         entry: python tests/test_stop_hook.py
         language: system
         pass_filenames: false
+      - id: loop-guard-fixtures
+        name: loop-guard fixtures
+        entry: python tests/test_loop_guard.py
+        language: system
+        pass_filenames: false
+      - id: verify-fixtures
+        name: verify-runner fixtures
+        entry: python tests/test_verify.py
+        language: system
+        pass_filenames: false
       - id: structure
         name: structure checks
         entry: python tests/test_structure.py

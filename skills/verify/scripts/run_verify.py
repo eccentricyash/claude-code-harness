@@ -21,6 +21,7 @@ Exit codes: 0 all configured gates passed, 1 a gate failed, 2 no config found.
 """
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -75,20 +76,37 @@ def parse_config(path: Path) -> dict[str, str | None]:
         if in_verification and ":" in stripped:
             key, _, value = stripped.partition(":")
             key = key.strip()
-            value = value.strip().strip('"').strip("'")
-            if value in ("null", "~", ""):
-                config[key] = None
-            else:
-                config[key] = value
+            value = value.strip()
+
+            # Unwrap only a fully-quoted value. str.strip('"') removes quote
+            # characters from BOTH ends independently, so `echo "types ok"`
+            # became `echo "types ok` -- an unterminated quote. cmd.exe
+            # tolerated that; bash correctly refuses. Any command containing
+            # quotes was being silently mangled.
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+                value = value[1:-1]
+
+            config[key] = None if value in ("null", "~", "") else value
 
     return config
 
 
+BASH = shutil.which("bash")
+
+
 def run_stage(command: str, cwd: Path) -> tuple[int, str]:
+    """Run one stage, preferring bash over the platform default shell.
+
+    subprocess(shell=True) uses cmd.exe on Windows, where POSIX constructs such
+    as `$(...)`, `&&` chains with quoting, and `test` behave differently or not
+    at all. A verification command that silently means something else is worse
+    than one that fails.
+    """
+    args: list[str] | str = [BASH, "-c", command] if BASH else command
     try:
         proc = subprocess.run(
-            command,
-            shell=True,
+            args,
+            shell=BASH is None,
             cwd=str(cwd),
             capture_output=True,
             text=True,
@@ -150,8 +168,11 @@ def main() -> int:
         note = "NOT RUN (long-lived process; verify manually or in a browser)"
         results.append((RUNTIME_STAGE, note if cmd else "NOT CONFIGURED"))
 
-    width = max((len(name) for name, _ in results), default=0) + 1
-    lines = [f"{name.upper() + ':':<{width + 1}} {verdict}" for name, verdict in results]
+    # Fixed width, not derived from the configured stages: the block is meant to
+    # be machine-readable, and columns that shift depending on which stages a
+    # project happens to define make it needlessly awkward to parse or diff.
+    width = max(len(s) for s in [*STAGES, RUNTIME_STAGE]) + 2
+    lines = [f"{name.upper() + ':':<{width}} {verdict}" for name, verdict in results]
     block = "\n".join(lines)
 
     print(block)
