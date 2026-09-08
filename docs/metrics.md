@@ -186,3 +186,74 @@ module named `secrets.py` shadowing the stdlib.
 **Running total: 6 false positives, 0 shipped.** That ratio is the point — friction
 is what makes people switch a guard off, so it is treated as a defect class with
 tests, not an acceptable cost.
+
+---
+
+# Phase 4 — loop-guard (2026-09-08)
+
+Final state: **6 skills, 2 agents, 3 hooks, 70 fixtures, CI green.**
+
+## FINDING 3 — the shell bug, and why it was the dangerous kind
+
+`subprocess(shell=True)` uses **cmd.exe on Windows**, not bash. A POSIX exit
+criterion —
+
+```
+test -z "$(grep -rl TODO src/ 2>/dev/null)"
+```
+
+— therefore ran with **no command substitution** and returned non-zero forever.
+A loop armed with it could never terminate successfully. It would run to the cap
+every time and report failure, which is exactly the runaway that `loop-guard`
+exists to prevent.
+
+**Why this class is worse than a crash:** the command *runs*. Nothing errors,
+nothing logs, the exit code is a plausible 1. `init`'s "can this command
+execute?" check passed it, because it *could* execute — it was merely wrong.
+Only running the full lifecycle and watching a satisfied criterion still report
+"not met" exposed it.
+
+Both `loop-guard` and `verify` now resolve `bash` explicitly and fall back to the
+platform shell only when absent.
+
+## FINDING 4 — a latent bug the fix uncovered
+
+Switching to bash immediately broke `verify` on a config that had worked for
+days:
+
+```
+/usr/bin/bash: -c: line 1: unexpected EOF while looking for matching `"'
+```
+
+`str.strip('"')` removes quote characters from **both ends independently**, so
+`echo "types ok"` became `echo "types ok` — an unterminated quote. cmd.exe
+tolerated it; bash correctly refuses.
+
+**Every verify command containing quotes had been silently mangled since Phase 2**
+— a coverage threshold, a `--grep` pattern, any path with a space. It only looked
+fine because cmd.exe was forgiving. Now only fully-quoted values are unwrapped,
+with a fixture for each form.
+
+The lesson worth keeping: *fixing one bug exposed a second that had been live the
+whole time.* A more permissive layer was masking a real defect.
+
+## Also changed
+
+`verify`'s output columns are fixed-width rather than derived from whichever
+stages a project configures, so the machine-readable block stays stable across
+projects and is not awkward to parse or diff. Found because a test asserted
+hard-coded spacing — the brittle test was pointing at brittle output.
+
+## Defect ledger
+
+| Source | Count | Shipped |
+|---|---|---|
+| Guard false positives (fixture suite, pre-use) | 3 | 0 |
+| Guard false positives (live testing) | 3 | 0 |
+| CI lint (`E741`, `F401`, `EXE001`) | 3 | 0 |
+| Layer 0 deny rule anchored to cwd | 1 | 0 |
+| Shell/quote bugs in `loop-guard` + `verify` | 2 | 0 |
+| **Total** | **12** | **0** |
+
+Every one has a test. That is the argument for treating a harness as software
+rather than configuration: **configuration cannot catch its own regressions.**
