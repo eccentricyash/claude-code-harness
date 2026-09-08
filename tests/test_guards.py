@@ -58,7 +58,8 @@ def shell_payload(command: str, tool: str = "Bash") -> dict:
 
 WRITE_CASES: list[tuple[str, dict, int]] = [
     # --- must block -------------------------------------------------------
-    ("openai-style key in source", write_payload("src/api.ts", f'const k = "{FAKE_OPENAI}";'), BLOCK),
+    ("openai-style key in source",
+     write_payload("src/api.ts", f'const k = "{FAKE_OPENAI}";'), BLOCK),
     ("github token in source", write_payload("src/ci.ts", f'token: "{FAKE_GITHUB}"'), BLOCK),
     ("aws access key id", write_payload("src/aws.py", f'AWS_ID = "{FAKE_AWS}"'), BLOCK),
     ("private key block", write_payload("deploy/key.txt",

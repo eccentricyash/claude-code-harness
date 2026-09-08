@@ -38,7 +38,11 @@ DANGEROUS = [
      "piping a downloaded script straight into a shell (curl | sh)"),
     (re.compile(r"\bwget\b[^|]*\|\s*(sudo\s+)?(ba)?sh\b"),
      "piping a downloaded script straight into a shell (wget | sh)"),
-    (re.compile(r"\b(iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^|]*\|\s*(iex|Invoke-Expression)\b", re.I),
+    (re.compile(
+        r"\b(iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^|]*\|"
+        r"\s*(iex|Invoke-Expression)\b",
+        re.I,
+     ),
      "piping a downloaded script into Invoke-Expression (iwr | iex)"),
     (re.compile(r"\bgit\s+reset\s+--hard\b[^|;]*\borigin/(main|master)\b"),
      "hard reset onto a remote default branch"),
@@ -51,7 +55,11 @@ WRITE_FORMS = [
     re.compile(r"(?P<content>.*?)(?<![0-9>&])>>?\s*(?P<path>[^\s;|&<>]+)"),
     re.compile(r"\|\s*tee\s+(-a\s+)?(?P<path>[^\s;|&<>]+)"),
     re.compile(r"\bsed\s+(-[a-zA-Z]*\s+)*-i\b[^;|]*?(?P<path>[^\s;|&<>]+)\s*$"),
-    re.compile(r"\b(Set-Content|Out-File|Add-Content)\b[^;|]*?(?:-Path\s+)?(?P<path>[^\s;|&<>]+)", re.I),
+    re.compile(
+        r"\b(Set-Content|Out-File|Add-Content)\b[^;|]*?(?:-Path\s+)?"
+        r"(?P<path>[^\s;|&<>]+)",
+        re.I,
+    ),
 ]
 
 

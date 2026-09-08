@@ -135,7 +135,8 @@ def probe_git(root: Path) -> None:
     print(f"  git repo        {'yes' if (root / '.git').exists() else 'NO'}")
     print(f"  .gitignore      {'yes' if (root / '.gitignore').is_file() else 'NO'}")
     existing = root / ".claude" / "rules" / "verify.md"
-    print(f"  verify.md       {'EXISTS -- will be overwritten' if existing.is_file() else 'absent'}")
+    verify_state = "EXISTS -- will be overwritten" if existing.is_file() else "absent"
+    print(f"  verify.md       {verify_state}")
     print(f"  CLAUDE.md       {'exists' if (root / 'CLAUDE.md').is_file() else 'absent'}")
 
 

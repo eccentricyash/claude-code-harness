@@ -1,0 +1,11 @@
+# Explicit rule selection rather than ruff's defaults, so a ruff upgrade cannot
+# quietly change what CI enforces.
+line-length = 100
+target-version = "py39"
+
+[lint]
+# E402 (module import not at top) is deliberately enabled: the hook scripts
+# insert their own directory on sys.path before importing secret_scan, and the
+# `# noqa: E402` on those lines documents that it is intentional. Without E402
+# selected, those suppressions would be flagged as unused.
+select = ["E", "F", "I", "B"]
