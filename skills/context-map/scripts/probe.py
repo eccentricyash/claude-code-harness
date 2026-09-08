@@ -141,7 +141,9 @@ def probe_git(root: Path) -> None:
 
 def main() -> int:
     root = Path.cwd().resolve()
-    print(f"CONTEXT-MAP PROBE — {root.name}")
+    # ASCII only: Windows consoles default to cp1252 and mangle box-drawing
+    # characters and dashes into replacement chars.
+    print(f"CONTEXT-MAP PROBE - {root.name}")
 
     probe_git(root)
     probe_node(root)
