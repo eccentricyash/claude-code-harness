@@ -113,7 +113,10 @@ def main() -> int:
         print()
         print("UNEXPECTED (changed but not in the plan):")
         for path in unexpected:
-            label = next((l for p, l in entries if p.replace("\\", "/") == path), "changed")
+            label = next(
+                (lbl for p, lbl in entries if p.replace("\\", "/") == path),
+                "changed",
+            )
             print(f"  {label:<20} {path}")
 
     if missing:

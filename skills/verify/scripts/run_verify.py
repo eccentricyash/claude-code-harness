@@ -21,7 +21,6 @@ Exit codes: 0 all configured gates passed, 1 a gate failed, 2 no config found.
 """
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 from pathlib import Path
