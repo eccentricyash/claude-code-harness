@@ -69,8 +69,29 @@ FRAME → PLAN → PLAN-REVIEW → IMPLEMENT → VERIFY → TREE-CHECK → CODE-
 | `/harness:tree-check` | Lists every changed file **including untracked ones**, flags anything outside declared scope. |
 | `/harness:context-map` | Probes a repo for its real commands, writes `CLAUDE.md`, `verify.md`, `gates.md`. |
 | `/harness:decide` | Appends a numbered ADR; refreshes `progress.md`. Memory that outlives the context window. |
-| `/harness:plan-review` | *(Phase 3)* Fresh read-only adversary attacks a plan before code exists. |
-| `/harness:ship-check` | *(Phase 3)* Release gate: scanners plus the checks scanners cannot do. |
+| `/harness:plan-review` | Forks to a fresh read-only `adversary` that checks a plan against the real repo before code exists. |
+| `/harness:ship-check` | Release gate: scanners, then the checklists scanners cannot cover. Every item classified AUTOMATED / SEMI / MANUAL. |
+
+Plus two agents that are read-only by construction: **`adversary`** (reviews,
+cannot edit) and **`verifier`** (runs commands, cannot fix).
+
+### Hooks — deterministic, zero model calls
+
+| Hook | Blocks |
+|---|---|
+| `guard_write` | Secrets and `.env` writes across Write / Edit / MultiEdit / NotebookEdit |
+| `guard_shell` | Dangerous commands in **both** shell vocabularies, plus shell-mediated writes — an edit-tool matcher alone is bypassed by `echo secret > .env` |
+| `inject_verify` | *(reporting)* Puts the last verify block beside any claim about it |
+
+### Tests
+
+**43 guard fixtures + 7 stop-hook fixtures + structure checks**, in CI.
+
+The **must-not-block** cases matter as much as the must-block ones. Six false
+positives have been caught so far and none shipped — including one four minutes
+after the hooks went live, where a heredoc documenting `rm -rf` was itself
+blocked. Friction is what makes people switch a guard off, so it is treated as a
+defect class with tests rather than an acceptable cost.
 
 ---
 
