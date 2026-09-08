@@ -130,10 +130,37 @@ def check_allowlist(failures: list[str]) -> None:
           f"threshold {config.get('entropy_threshold')}")
 
 
+MD_LINK = re.compile(r"\[[^\]]+\]\(([^)#][^)]*)\)")
+
+
+def check_references(failures: list[str]) -> None:
+    """Progressive disclosure only works if the linked files exist.
+
+    A SKILL.md pointing at a reference that was renamed degrades silently: the
+    skill still loads, and the guidance simply never arrives.
+    """
+    print()
+    print("reference links")
+    print("---------------")
+    checked = 0
+    for md in sorted((ROOT / "skills").rglob("*.md")):
+        for link in MD_LINK.findall(md.read_text(encoding="utf-8")):
+            if link.startswith(("http://", "https://", "mailto:")):
+                continue
+            target = (md.parent / link).resolve()
+            checked += 1
+            if not target.exists():
+                rel = md.relative_to(ROOT).as_posix()
+                print(f"  FAIL  {rel} -> missing {link}")
+                failures.append(link)
+    print(f"  ok    {checked} local links resolve")
+
+
 def main() -> int:
     failures: list[str] = []
     check_frontmatter(failures)
     check_hook_targets(failures)
+    check_references(failures)
     check_ascii(failures)
     check_allowlist(failures)
 
