@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: guard-fixtures
+        name: guard fixtures
+        entry: python tests/test_guards.py
+        language: system
+        pass_filenames: false
+      - id: stop-hook-fixtures
+        name: stop-hook fixtures
+        entry: python tests/test_stop_hook.py
+        language: system
+        pass_filenames: false
+      - id: structure
+        name: structure checks
+        entry: python tests/test_structure.py
+        language: system
+        pass_filenames: false

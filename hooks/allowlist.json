@@ -1,0 +1,34 @@
+{
+  "_comment": "Every entry here widens a hole. Add one only with a real false positive to point at, and record it in docs/metrics.md.",
+
+  "paths": [
+    "**/tests/fixtures/**",
+    "**/test/fixtures/**",
+    "**/__fixtures__/**",
+    "**/*.example",
+    "**/*.example.*",
+    "**/*.sample",
+    "**/docs/**/*.md",
+    "**/*.test.*",
+    "**/*.spec.*"
+  ],
+
+  "pragma": "gitleaks:allow",
+
+  "known_examples": [
+    "AKIAIOSFODNN7EXAMPLE",
+    "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    "sk-test",
+    "sk-ant-test",
+    "ghp_test",
+    "xxxxxxxx",
+    "your-api-key",
+    "YOUR_API_KEY",
+    "changeme",
+    "placeholder",
+    "0123456789abcdef"
+  ],
+
+  "entropy_threshold": 4.2,
+  "min_secret_length": 20
+}
