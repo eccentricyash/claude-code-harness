@@ -8,7 +8,7 @@ Captured **2026-09-08** on Claude Code **2.1.263**, win32-x64, PowerShell primar
 |---|---|
 | Claude Code | 2.1.263 (native, commit 37ae3f38d765) |
 | Model | Opus 5 — **1M context window** |
-| Binary | `C:\Users\tooya\.local\bin\claude.exe` |
+| Install | native binary (`~/.local/bin/claude.exe`) |
 | Account | Pro/Max — no managed settings, no org policy |
 | `claude doctor` | No installation issues found |
 
