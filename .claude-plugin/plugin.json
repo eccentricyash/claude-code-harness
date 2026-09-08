@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "harness",
+  "version": "0.1.0",
+  "description": "A thin control layer over Claude Code's native primitives: deterministic verification, scope checking, project context bootstrapping, and durable decision records.",
+  "author": {
+    "name": "Yash Yadav"
+  },
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "verification",
+    "context-engineering",
+    "harness"
+  ]
+}
